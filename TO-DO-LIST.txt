@@ -1,0 +1,214 @@
+#include <iostream>
+#include <fstream>
+#include <queue>
+#include <string>
+#include <stdexcept>
+
+using namespace std;
+
+class Task {
+public:
+    string taskName;
+    int priority;
+    string deadline;
+    string status;
+    string today_date;
+
+public:
+    virtual void getdetails() {
+        cout << "Enter Task name:" << endl;
+        cin >> taskName;
+        cout << "Enter Priority:" << endl;
+        cin >> priority;
+        cout << "Enter Deadline:" << endl;
+        cin >> deadline;
+        cout << "Enter Status:" << endl;
+        cin >> status;
+        cout << "Enter today's date:" << endl;
+        cin >> today_date;
+    }
+
+    void exception() {
+        try {
+            if (today_date > deadline) {
+                throw "deadline crossed";
+            } else {
+                cout << "Deadline not crossed" << endl;
+            }
+        } catch (const char* e) {
+            cout << "Exception: " << e << endl;
+        }
+    }
+
+    virtual void displayDetails() const {
+        ofstream fout("output.txt");
+        fout << "Task Name: " << taskName << endl;
+        fout << "Priority: " << priority << endl;
+        fout << "Deadline: " << deadline << endl;
+        fout << "Status: " << status << endl;
+    }
+};
+
+class PersonalTask : public Task {
+public:
+    string location;
+    string notes;
+
+public:
+    void getdetails() override {
+        Task::getdetails();
+        cout << "Enter Location:" << endl;
+        cin >> location;
+        cout << "Enter Notes:" << endl;
+        cin >> notes;
+    }
+
+    void displayDetails() const override {
+        Task::displayDetails();
+        cout << "Location: " << location << endl;
+        cout << "Notes: " << notes << endl;
+    }
+};
+
+class WorkTask : public Task {
+public:
+    string projectName;
+
+public:
+    void getdetails() override {
+        Task::getdetails();
+        cout << "Enter Project name:" << endl;
+        cin >> projectName;
+    }
+
+    void displayDetails() const override {
+        Task::displayDetails();
+        cout << "Project Name: " << projectName << endl;
+    }
+};
+
+class ShoppingTask : public Task {
+public:
+    string storeName, product_name;
+    int quan, pro_avai;
+
+public:
+    void getdetails() override {
+        Task::getdetails();
+        cout << "Enter Store name:" << endl;
+        cin >> storeName;
+        cout << "Enter the product name:" << endl;
+        cin >> product_name;
+        cout << "Enter quantity:" << endl;
+        cin >> quan;
+        cout << "Enter availability:" << endl;
+        cin >> pro_avai;
+    }
+
+    void displayDetails() const override {
+        Task::displayDetails();
+        cout << "Store Name: " << storeName << endl;
+        cout << "Product name: " << product_name << endl;
+        cout << "Quantity: " << quan << endl;
+        cout << "Product Availability: " << pro_avai << endl;
+
+        if (quan < pro_avai) {
+            cout << "Product Available" << endl;
+        } else {
+            cout << "Not Available" << endl;
+        }
+    }
+};
+
+class TaskManager {
+public:
+    priority_queue<Task*, vector<Task*>> taskqueue;
+    Task* tasks[100];
+
+public:
+    int taskCount;
+
+    TaskManager() : taskCount(0) {}
+
+    void addTask(Task* task) {
+        if (taskCount < 100) {
+            tasks[taskCount++] = task;
+            taskqueue.push(task);
+        } else {
+            cout << "Cannot add more tasks. Task limit reached." << endl;
+        }
+    }
+
+    void displayAllTasks() {
+        for (int i = 0; i < taskCount; ++i) {
+            tasks[i]->getdetails();
+            tasks[i]->displayDetails();
+            cout << "---------------------" << endl;
+        }
+    }
+
+    void display_high_prio() {
+        if (!taskqueue.empty()) {
+            Task* highPriorityTask = taskqueue.top();
+            highPriorityTask->displayDetails();
+            taskqueue.pop();
+        }
+    }
+
+    ~TaskManager() {
+        for (int i = 0; i < taskCount; ++i) {
+            delete tasks[i];
+        }
+    }
+};
+
+int main() {
+    TaskManager manager;
+    int choice;
+
+    while (true) {
+        cout << "Menu: " << endl;
+        cout << "1. Personal Task" << endl;
+        cout << "2. Work Task" << endl;
+        cout << "3. Shopping Task" << endl;
+        cout << "4. Display All Tasks" << endl;
+        cout << "5. Display High Priority Task" << endl;
+        cout << "6. Exit" << endl;
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        Task* task = nullptr;
+
+        switch (choice) {
+            case 1:
+                task = new PersonalTask();
+                break;
+            case 2:
+                task = new WorkTask();
+                break;
+            case 3:
+                task = new ShoppingTask();
+                break;
+            case 4:
+                manager.displayAllTasks();
+                continue;
+            case 5:
+                cout << "High Priority Task: " << endl;
+                manager.display_high_prio();
+                continue;
+            case 6:
+                return 0;
+            default:
+                cout << "Invalid choice, please try again." << endl;
+                continue;
+        }
+
+        if (task) {
+            task->getdetails();
+            manager.addTask(task);
+            task->exception();
+        }
+    }
+
+    return 0;
+}
